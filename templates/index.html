@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBusBook - Search</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <header>
+        <a href="/" class="logo">AutoBusBook</a>
+        <nav>
+            <a href="/">Home</a>
+            <a href="#">My Bookings</a>
+            <a href="#">About</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="hero">
+            <h1>Find Your Next Journey</h1>
+            <form class="search-form" onsubmit="searchBuses(event)">
+                <input type="text" id="from" placeholder="From City (e.g. New York)" value="New York" required>
+                <input type="text" id="to" placeholder="To City (e.g. Washington)" value="Washington" required>
+                <input type="date" id="date" required>
+                <button type="submit" class="primary">Search Buses</button>
+            </form>
+        </div>
+
+        <div id="results" class="results-grid">
+            <!-- JS will populate results here -->
+        </div>
+    </main>
+
+    <script src="/static/script.js"></script>
+    <script>
+        // Set default date to today
+        document.getElementById('date').valueAsDate = new Date();
+    </script>
+</body>
+
+</html>

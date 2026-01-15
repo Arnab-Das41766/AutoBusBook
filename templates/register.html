@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - AutoBusBook</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="auth-wrapper">
+        <!-- Left Side: Hero Image -->
+        <div class="auth-image">
+            <div class="auth-image-content">
+                <h2>Your Journey <br>Starts Here.</h2>
+                <p>Sign up now to unlock exclusive deals and manage your trips with ease.</p>
+            </div>
+        </div>
+
+        <!-- Right Side: Form -->
+        <div class="auth-form-container">
+            <div class="auth-card">
+                <a href="/" class="logo-auth">AutoBusBook</a>
+
+                <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem;">Create Account</h1>
+                <p class="text-muted" style="margin-bottom: 2rem;">Fill in your details to get started.</p>
+
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" required placeholder="John Doe">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" required placeholder="john@example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" required placeholder="1234567890">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" required min="18" max="100" placeholder="25">
+                    </div>
+
+                    <div id="error-msg" class="msg" style="color:red; margin-top:1rem; font-size:0.9rem;"></div>
+                    <div id="success-msg" class="msg" style="color:green; margin-top:1rem; font-size:0.9rem;"></div>
+
+                    <button type="submit" class="primary" style="margin-top: 1.5rem;">Create Account</button>
+                </form>
+
+                <div class="text-center" style="margin-top: 2rem;">
+                    <p class="text-muted">Already have an account? <a href="/login" class="link-primary">Login here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const age = document.getElementById('age').value;
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+            const submitBtn = e.target.querySelector('button');
+
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, age })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    successMsg.textContent = data.message;
+                    submitBtn.textContent = 'Success!';
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1500);
+                } else {
+                    errorMsg.textContent = data.error || 'Registration failed';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = 'Network error. Please try again.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+
+</html>

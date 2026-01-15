@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AutoBusBook</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="auth-wrapper">
+        <!-- Left Side: Hero Image -->
+        <div class="auth-image">
+            <div class="auth-image-content">
+                <h2>Travel Smart. <br>Book Instantly.</h2>
+                <p>Join thousands of travelers experiencing the most comfortable bus journeys across the country.</p>
+            </div>
+        </div>
+
+        <!-- Right Side: Form -->
+        <div class="auth-form-container">
+            <div class="auth-card">
+                <a href="/" class="logo-auth">AutoBusBook</a>
+
+                <div id="step-email" class="login-step active">
+                    <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem;">Welcome Back</h1>
+                    <p class="text-muted" style="margin-bottom: 2rem;">Login with your email to access your bookings.
+                    </p>
+
+                    <form id="email-form">
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" placeholder="name@example.com" required>
+                        </div>
+
+                        <button type="submit" class="primary">Continue with Email</button>
+                        <div id="email-error" class="msg" style="color:red; margin-top:1rem; font-size:0.9rem;"></div>
+
+                        <div class="text-center" style="margin-top: 2rem;">
+                            <p class="text-muted">Don't have an account? <a href="/register"
+                                    class="link-primary">Register here</a></p>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="step-otp" class="login-step" style="display:none;">
+                    <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem;">Verify OTP</h1>
+                    <p class="text-muted" style="margin-bottom: 2rem;">We just sent a code to <span id="display-email"
+                            style="font-weight:600;">your email</span>.</p>
+
+                    <form id="otp-form">
+                        <div class="form-group">
+                            <label for="otp">Enter 6-digit Code</label>
+                            <input type="text" id="otp" placeholder="123456"
+                                style="letter-spacing: 0.5em; text-align: center; font-size: 1.5rem; padding: 1rem;"
+                                required maxlength="6">
+                        </div>
+
+                        <button type="submit" class="primary">Verify & Login</button>
+                        <div id="otp-error" class="msg" style="color:red; margin-top:1rem; font-size:0.9rem;"></div>
+
+                        <div class="text-center" style="margin-top: 1.5rem;">
+                            <button type="button" onclick="location.reload()"
+                                style="background:none; border:none; color:#666; cursor:pointer; text-decoration:underline;">Change
+                                Email</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const emailForm = document.getElementById('email-form');
+        const otpForm = document.getElementById('otp-form');
+        let userEmail = '';
+
+        emailForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const btn = emailForm.querySelector('button');
+            const err = document.getElementById('email-error');
+
+            btn.disabled = true; btn.textContent = 'Sending Code...'; err.textContent = '';
+
+            try {
+                const res = await fetch('/api/auth/send-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    userEmail = email;
+                    document.getElementById('step-email').style.display = 'none';
+                    document.getElementById('step-otp').style.display = 'block';
+                    document.getElementById('display-email').textContent = email;
+                } else {
+                    err.textContent = data.error || 'Failed to send OTP';
+                }
+            } catch (ex) {
+                err.textContent = 'Network error. Please try again.';
+            } finally {
+                if (!userEmail) { btn.disabled = false; btn.textContent = 'Continue with Email'; }
+            }
+        };
+
+        otpForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const otp = document.getElementById('otp').value;
+            const btn = otpForm.querySelector('button');
+            const err = document.getElementById('otp-error');
+
+            btn.disabled = true; btn.textContent = 'Verifying...'; err.textContent = '';
+
+            try {
+                const res = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: userEmail, otp })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    window.location.href = '/';
+                } else {
+                    err.textContent = data.error || 'Invalid OTP';
+                    btn.disabled = false; btn.textContent = 'Verify & Login';
+                }
+            } catch (ex) {
+                err.textContent = 'Network error';
+                btn.disabled = false; btn.textContent = 'Verify & Login';
+            }
+        };
+    </script>
+</body>
+
+</html>

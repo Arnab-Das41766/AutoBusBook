@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Seats - AutoBusBook</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <header>
+        <a href="/" class="logo">AutoBusBook</a>
+    </header>
+
+    <main>
+        <div id="bus-header" style="margin-bottom:2rem; text-align:center;">Loading...</div>
+
+        <div style="display:flex; justify-content:center; gap:2rem;">
+            <div id="seat-map" class="seat-layout">
+                <!-- JS will render seats -->
+            </div>
+
+            <div class="booking-summary">
+                <h3>Booking Summary</h3>
+                <p id="summary-text" style="margin:1rem 0;">No seats selected</p>
+                <button id="book-btn" class="primary" style="width:100%" disabled>Confirm Booking</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
