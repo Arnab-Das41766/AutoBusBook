@@ -106,32 +106,79 @@ def init_db():
 def seed_data():
     with app.app_context():
         db = get_db()
-        # Check if empty
+        
+        # 1. Seed Users if empty
         cur = db.execute("SELECT count(*) FROM users")
-        if cur.fetchone()[0] > 0:
-            return
-
-        print("Seeding data...")
-        # Users
-        db.execute("INSERT INTO users (email, name, phone) VALUES (?, ?, ?)", 
-                   ('demo@example.com', 'Demo User', '555-0123'))
+        if cur.fetchone()[0] == 0:
+            print("Seeding Users...")
+            db.execute("INSERT INTO users (email, name, phone) VALUES (?, ?, ?)", 
+                       ('demo@example.com', 'Demo User', '555-0123'))
         
-        # Operators
-        db.execute("INSERT INTO bus_operators (name, rating) VALUES ('Express Lines', 4.5)") 
-        db.execute("INSERT INTO bus_operators (name, rating) VALUES ('City Hopper', 3.8)")
-        
-        # Buses
-        db.execute("INSERT INTO buses (operator_id, bus_number, bus_type) VALUES (1, 'NY-101', 'AC Sleeper')")
-        db.execute("INSERT INTO buses (operator_id, bus_number, bus_type) VALUES (2, 'CH-202', 'Non-AC Seater')")
-        
-        # Routes
-        db.execute("INSERT INTO routes (from_city, to_city, duration) VALUES ('New York', 'Washington', '4h 30m')")
-        db.execute("INSERT INTO routes (from_city, to_city, duration) VALUES ('San Francisco', 'Los Angeles', '6h 15m')")
-        
-        # Schedules (For today and tomorrow)
-        today = datetime.now().strftime("%Y-%m-%d")
-        db.execute("INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, travel_date, price) VALUES (1, 1, '08:00', '12:30', ?, 45.0)", (today,))
-        db.execute("INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, travel_date, price) VALUES (2, 1, '10:00', '14:30', ?, 35.0)", (today,))
+        # 2. Seed Bus Data if empty
+        cur = db.execute("SELECT count(*) FROM buses")
+        if cur.fetchone()[0] == 0:
+            print("Seeding Expanded Bus Data...")
+            
+            # Operators
+            operators = [
+                ('Zingbus', 4.8), ('IntrCity SmartBus', 4.6), ('NueGo', 4.2),
+                ('City Express', 3.9), ('Royal Travels', 4.5), ('Metro Glider', 4.1),
+                ('Skyline Coaches', 4.7), ('BlueDot Bus', 3.8)
+            ]
+            op_ids = []
+            for name, rating in operators:
+                cur = db.execute("INSERT INTO bus_operators (name, rating) VALUES (?, ?)", (name, rating))
+                op_ids.append(cur.lastrowid)
+            
+            # Buses (Pool of 30)
+            bus_types = ['Volvo Multi-Axle AC Sleeper', 'Scania AC Seater/Sleeper', 'Electric AC Seater', 'Luxury Sleeper Non-AC', 'BharatBenz Glider']
+            bus_ids = []
+            for i in range(30):
+                op_id = random.choice(op_ids)
+                b_type = random.choice(bus_types)
+                num = f"BUS-{random.randint(1000, 9999)}"
+                cur = db.execute("INSERT INTO buses (operator_id, bus_number, bus_type) VALUES (?, ?, ?)", (op_id, num, b_type))
+                bus_ids.append(cur.lastrowid)
+            
+            # Routes
+            routes_data = [
+                ('Delhi', 'Manali', '12h 30m'),
+                ('Mumbai', 'Pune', '3h 15m'),
+                ('Bangalore', 'Goa', '10h 45m'),
+                ('Chennai', 'Bangalore', '6h 00m'),
+                ('Hyderabad', 'Vijayawada', '5h 30m'),
+                ('Delhi', 'Jaipur', '5h 45m'),
+                ('Pune', 'Goa', '9h 15m')
+            ]
+            route_ids = []
+            for f, t, d in routes_data:
+                cur = db.execute("INSERT INTO routes (from_city, to_city, duration) VALUES (?, ?, ?)", (f, t, d))
+                route_ids.append(cur.lastrowid)
+            
+            # Schedules (Next 10 Days)
+            today = datetime.now().date()
+            for day_offset in range(10):
+                current_date = (today + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+                
+                for r_idx, route_id in enumerate(route_ids):
+                    # 20% Chance of NO BUSES (Off Day)
+                    if random.random() < 0.2:
+                        continue
+                    
+                    # 2-4 Trips per day
+                    num_trips = random.randint(2, 4)
+                    for _ in range(num_trips):
+                        bus_id = random.choice(bus_ids)
+                        hour = random.randint(6, 22)
+                        minute = random.choice([0, 15, 30, 45])
+                        dep_time = f"{hour:02}:{minute:02}"
+                        arr_time = f"{(hour+5)%24:02}:{minute:02}" # Simple +5h logic
+                        price = random.randint(400, 2500)
+                        
+                        db.execute('''
+                            INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, travel_date, price) 
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (bus_id, route_id, dep_time, arr_time, current_date, price))
         
         db.commit()
 

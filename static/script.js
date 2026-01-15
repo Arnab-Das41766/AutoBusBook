@@ -52,7 +52,7 @@ async function searchBuses(e) {
                 <div><strong>${bus.departure_time}</strong> (${bus.from_city}) ➝ <strong>${bus.arrival_time}</strong> (${bus.to_city})</div>
             </div>
             <div class="bus-action">
-                <div class="bus-price">$${bus.price}</div>
+                <div class="bus-price">₹${bus.price}</div>
                 <button class="primary" onclick="window.location.href='/seats?scheduleId=${bus.id}'">Select Seats</button>
             </div>
         `;
@@ -129,7 +129,7 @@ if (window.location.pathname === '/seats') {
         const total = selectedSeats.length * pricePerSeat;
         document.getElementById('summary-text').innerHTML = `
             Selected: ${selectedSeats.join(', ') || 'None'}<br>
-            Total: <strong>$${total}</strong>
+            Total: <strong>₹${total}</strong>
         `;
         document.getElementById('book-btn').disabled = selectedSeats.length === 0;
     }

@@ -9,29 +9,49 @@
 </head>
 
 <body>
-    <header>
-        <a href="/" class="logo">AutoBusBook</a>
-        <nav>
-            <a href="/">Home</a>
-            <a href="#">My Bookings</a>
-            <a href="#">About</a>
-        </nav>
+    <header class="main-header">
+        <div class="container header-content">
+            <a href="/" class="logo">AutoBusBook</a>
+            <nav>
+                <a href="/login" class="nav-link">Login / Signup</a>
+            </nav>
+        </div>
     </header>
 
     <main>
-        <div class="hero">
-            <h1>Find Your Next Journey</h1>
-            <form class="search-form" onsubmit="searchBuses(event)">
-                <input type="text" id="from" placeholder="From City (e.g. New York)" value="New York" required>
-                <input type="text" id="to" placeholder="To City (e.g. Washington)" value="Washington" required>
-                <input type="date" id="date" required>
-                <button type="submit" class="primary">Search Buses</button>
-            </form>
+        <div class="hero-section">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <h1>India's Most Comfortable Bus Journeys</h1>
+                <p>AC Sleepers, Luxury Seaters & more at lowest prices.</p>
+            </div>
+
+            <div class="search-widget">
+                <form class="search-form" onsubmit="searchBuses(event)">
+                    <div class="form-group">
+                        <label>From</label>
+                        <input type="text" id="from" placeholder="e.g. Delhi" value="Delhi" required>
+                    </div>
+                    <div class="form-group">
+                        <label>To</label>
+                        <input type="text" id="to" placeholder="e.g. Manali" value="Manali" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <button type="submit" class="search-btn">Search Buses</button>
+                </form>
+            </div>
         </div>
 
-        <div id="results" class="results-grid">
-            <!-- JS will populate results here -->
-        </div>
+        <section class="results-section">
+            <div class="container">
+                <div id="results" class="results-grid">
+                    <!-- JS will populate results here -->
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="/static/script.js"></script>
