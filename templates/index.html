@@ -30,17 +30,18 @@
                 <form class="search-form" onsubmit="searchBuses(event)">
                     <div class="form-group">
                         <label>From</label>
-                        <input type="text" id="from" placeholder="e.g. Delhi" value="Delhi" required>
+                        <input type="text" id="from" placeholder="e.g. Delhi" value="Delhi" required list="city-list">
                     </div>
                     <div class="form-group">
                         <label>To</label>
-                        <input type="text" id="to" placeholder="e.g. Manali" value="Manali" required>
+                        <input type="text" id="to" placeholder="e.g. Manali" value="Manali" required list="city-list">
                     </div>
                     <div class="form-group">
                         <label>Date</label>
                         <input type="date" id="date" required>
                     </div>
                     <button type="submit" class="search-btn">Search Buses</button>
+                    <datalist id="city-list"></datalist>
                 </form>
             </div>
         </div>

@@ -123,11 +123,16 @@ def seed_data():
             db.execute("INSERT INTO users (email, name, phone) VALUES (?, ?, ?)", 
                        ('demo@example.com', 'Demo User', '555-0123'))
         
-        # 2. Seed Bus Data if empty
+        # 2. Seed Bus Data if empty OR if extending dates
+        # Use a flag to track if we need to insert core data
         cur = db.execute("SELECT count(*) FROM buses")
-        if cur.fetchone()[0] == 0:
-            print("Seeding Expanded Bus Data...")
-            
+        buses_exist = cur.fetchone()[0] > 0
+        
+        bus_ids = []
+        route_ids = []
+        
+        if not buses_exist:
+            print("Seeding Initial Bus Data...")
             # Operators
             operators = [
                 ('Zingbus', 4.8), ('IntrCity SmartBus', 4.6), ('NueGo', 4.2),
@@ -141,7 +146,6 @@ def seed_data():
             
             # Buses (Pool of 30)
             bus_types = ['Volvo Multi-Axle AC Sleeper', 'Scania AC Seater/Sleeper', 'Electric AC Seater', 'Luxury Sleeper Non-AC', 'BharatBenz Glider']
-            bus_ids = []
             for i in range(30):
                 op_id = random.choice(op_ids)
                 b_type = random.choice(bus_types)
@@ -159,35 +163,51 @@ def seed_data():
                 ('Delhi', 'Jaipur', '5h 45m'),
                 ('Pune', 'Goa', '9h 15m')
             ]
-            route_ids = []
             for f, t, d in routes_data:
                 cur = db.execute("INSERT INTO routes (from_city, to_city, duration) VALUES (?, ?, ?)", (f, t, d))
                 route_ids.append(cur.lastrowid)
+        else:
+            # Fetch existing IDs for schedule generation
+            cur = db.execute("SELECT id FROM buses")
+            bus_ids = [row[0] for row in cur.fetchall()]
+            cur = db.execute("SELECT id FROM routes")
+            route_ids = [row[0] for row in cur.fetchall()]
+
+        # --- Efficient Schedule Seeding (Ensure 30 Days) ---
+        today = datetime.now().date()
+        
+        # Get existing schedule dates
+        cur = db.execute("SELECT DISTINCT travel_date FROM schedules")
+        existing_dates = {row[0] for row in cur.fetchall()}
+        
+        print("Checking schedules for next 30 days...")
+        for day_offset in range(30):
+            current_date = (today + timedelta(days=day_offset)).strftime("%Y-%m-%d")
             
-            # Schedules (Next 10 Days)
-            today = datetime.now().date()
-            for day_offset in range(10):
-                current_date = (today + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+            if current_date in existing_dates:
+                continue # Skip if already exists
                 
-                for r_idx, route_id in enumerate(route_ids):
-                    # 20% Chance of NO BUSES (Off Day)
-                    if random.random() < 0.2:
-                        continue
+            print(f"Generating schedules for {current_date}...")
+            
+            for r_idx, route_id in enumerate(route_ids):
+                # 10% Chance of NO BUSES (Off Day) - Reduced from 20%
+                if random.random() < 0.1:
+                    continue
+                
+                # 3-6 Trips per day (Increased availability)
+                num_trips = random.randint(3, 6)
+                for _ in range(num_trips):
+                    bus_id = random.choice(bus_ids)
+                    hour = random.randint(5, 23) # Extended hours
+                    minute = random.choice([0, 15, 30, 45])
+                    dep_time = f"{hour:02}:{minute:02}"
+                    arr_time = f"{(hour+5)%24:02}:{minute:02}" # Simple +5h logic
+                    price = random.randint(400, 2500)
                     
-                    # 2-4 Trips per day
-                    num_trips = random.randint(2, 4)
-                    for _ in range(num_trips):
-                        bus_id = random.choice(bus_ids)
-                        hour = random.randint(6, 22)
-                        minute = random.choice([0, 15, 30, 45])
-                        dep_time = f"{hour:02}:{minute:02}"
-                        arr_time = f"{(hour+5)%24:02}:{minute:02}" # Simple +5h logic
-                        price = random.randint(400, 2500)
-                        
-                        db.execute('''
-                            INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, travel_date, price) 
-                            VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (bus_id, route_id, dep_time, arr_time, current_date, price))
+                    db.execute('''
+                        INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, travel_date, price) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (bus_id, route_id, dep_time, arr_time, current_date, price))
         
         db.commit()
 
@@ -226,15 +246,119 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from fpdf import FPDF
+import io
 
 load_dotenv()
 
-def send_email(to_email, subject, body):
+# --- PDF Generation ---
+import qrcode
+import tempfile
+
+def generate_ticket_pdf(booking_data):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # Header
+    pdf.set_font("Arial", 'B', 20)
+    pdf.set_text_color(209, 46, 46) # Primary Red
+    pdf.cell(200, 10, txt="AutoBusBook Ticket", ln=1, align='C')
+    pdf.ln(5)
+    
+    # Booking Checkmark Style
+    pdf.set_font("Arial", 'B', 14)
+    pdf.set_text_color(0, 128, 0) # Green
+    pdf.cell(200, 10, txt="Booking Confirmed", ln=1, align='C')
+    pdf.ln(5)
+    
+    pdf.set_text_color(0, 0, 0) # Reset
+    
+    # Details Box
+    pdf.set_fill_color(245, 245, 245)
+    pdf.rect(10, 40, 190, 80, 'F')
+    
+    pdf.set_font("Arial", 'B', 16)
+    pdf.set_xy(15, 45)
+    pdf.cell(100, 10, txt=booking_data['operator'])
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.set_xy(150, 45)
+    pdf.cell(40, 10, txt=f"PNR: AB-{booking_data['id']}", border=1, align='C')
+    
+    pdf.set_xy(15, 60)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, txt=f"Route: {booking_data['from_city']} to {booking_data['to_city']}", ln=1)
+    
+    pdf.set_xy(15, 70)
+    pdf.cell(0, 10, txt=f"Date: {booking_data['travel_date']} | Time: {booking_data['departure_time']}", ln=1)
+    
+    # Passengers
+    pdf.set_xy(15, 90)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, txt="Passengers:", ln=1)
+    
+    pdf.set_font("Arial", '', 11)
+    passengers = booking_data['passengers']
+    if isinstance(passengers, str):
+        passengers = json.loads(passengers)
+        
+    y = 100
+    for p in passengers:
+        pdf.set_xy(20, y)
+        contact = p.get('phone') or p.get('email', '')
+        pdf.cell(0, 8, txt=f"- {p['name']} ({p['gender']}, {p['age']}y) | Seat: {p['seat']} | {contact}", ln=1)
+        y += 8
+        
+    # Total
+    pdf.set_xy(15, y + 10)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, txt=f"Total Paid: Rs. {booking_data['total_amount']}", ln=1, align='R')
+    
+    # --- Backend QR Code Generation ---
+    try:
+        qr_data = f"PNR: AB-{booking_data['id']}\nRoute: {booking_data['from_city']} to {booking_data['to_city']}\nDate: {booking_data['travel_date']}\n\nPassengers:\n"
+        for p in passengers:
+            contact = p.get('phone') or p.get('email', '')
+            qr_data += f"- {p['name']} ({p.get('age','')}y) | Seat: {p['seat']} | {contact}\n"
+            
+        qr = qrcode.make(qr_data)
+        
+        # Create a temp file for the image
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+            qr.save(tmp.name)
+            tmp_path = tmp.name
+            
+        # Add Image to PDF
+        # Center the QR code at the bottom
+        pdf.image(tmp_path, x=85, y=y+25, w=40, h=40)
+        
+        # Cleanup
+        try:
+            os.remove(tmp_path)
+        except:
+            pass
+            
+    except Exception as e:
+        print(f"PDF QR Error: {e}")
+        # fallback text if QR fails
+        pdf.set_xy(15, y + 30)
+        pdf.set_font("Arial", 'I', 10)
+        pdf.cell(0, 10, txt="(QR Code generation failed, please use PNR)", ln=1, align='C')
+    # ----------------------------------
+    
+    pdf.ln(50) # Spacer for QR
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 10, txt="Thank you for choosing AutoBusBook!", ln=1, align='C')
+    
+    return pdf.output(dest='S').encode('latin-1') # Return bytes
+
+def send_email(to_email, subject, body, attachment=None):
     sender_email = os.getenv("SMTP_EMAIL")
     sender_password = os.getenv("SMTP_PASSWORD")
     smtp_server = os.getenv("SMTP_SERVER")
     smtp_port = int(os.getenv("SMTP_PORT", 587))
-    # print(f"DEBUG: sending email to {to_email} via {smtp_server}:{smtp_port}")
     
     msg = MIMEMultipart()
     msg['From'] = sender_email
@@ -242,26 +366,29 @@ def send_email(to_email, subject, body):
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
     
+    if attachment:
+        filename, content = attachment
+        part = MIMEApplication(content, Name=filename)
+        part['Content-Disposition'] = f'attachment; filename="{filename}"'
+        msg.attach(part)
+    
     try:
         if smtp_server == 'localhost':
-            # Debug Server (No Auth)
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.send_message(msg)
+            # Debug Server
+            # with smtplib.SMTP(smtp_server, smtp_port) as server:
+            #     server.send_message(msg)
+            print(f"DEBUG: Sent email to {to_email} (Local Mock)")
         else:
-            # Real SMTP (Gmail etc) - Explicit Flow
+            # Real SMTP
             context = ssl.create_default_context()
             with smtplib.SMTP(smtp_server, smtp_port) as server:
-                # server.set_debuglevel(1) # Uncomment for debug
                 server.ehlo()
                 server.starttls(context=context)
                 server.ehlo()
                 server.login(sender_email, sender_password)
                 server.send_message(msg)
-        # print(f"DEBUG: Email sent successfully to {to_email}")
         return True
     except Exception as e:
-        # import traceback
-        # traceback.print_exc()
         print(f"Failed to send email: {e}")
         return False
 
@@ -437,6 +564,15 @@ def api_seats(schedule_id):
         
     return jsonify({"booked": booked_seats})
 
+@app.route('/api/cities')
+def api_cities():
+    db = get_db()
+    # Get uniue cities from both origin and destination
+    cur = db.execute("SELECT DISTINCT from_city FROM routes UNION SELECT DISTINCT to_city FROM routes")
+    cities = [row[0] for row in cur.fetchall()]
+    cities.sort()
+    return jsonify(cities)
+
 @app.route('/api/book', methods=['POST'])
 def api_book():
     if 'user_id' not in session:
@@ -484,6 +620,34 @@ def api_book():
         db.commit()
         
         booking_id = cur.lastrowid
+        
+        # --- Send Ticket Email ---
+        try:
+            # Re-fetch full details for PDF
+            query = '''
+                SELECT bk.id, bk.total_amount, bk.passengers, bk.seats,
+                       s.departure_time, s.travel_date,
+                       r.from_city, r.to_city, bo.name as operator
+                FROM bookings bk
+                JOIN schedules s ON bk.schedule_id = s.id
+                JOIN routes r ON s.route_id = r.id
+                JOIN buses b ON s.bus_id = b.id
+                JOIN bus_operators bo ON b.operator_id = bo.id
+                WHERE bk.id = ?
+            '''
+            cur = db.execute(query, (booking_id,))
+            booking_data = dict(cur.fetchone())
+            
+            pdf_bytes = generate_ticket_pdf(booking_data)
+            
+            user_email = session.get('user_email')
+            if user_email:
+                subject = f"Your Ticket - {booking_data['from_city']} to {booking_data['to_city']}"
+                body = "Please find attached your ticket."
+                send_email(user_email, subject, body, attachment=(f"ticket_{booking_id}.pdf", pdf_bytes))
+        except Exception as ex:
+            print(f"Email failed: {ex}")
+            
         return jsonify({"message": "Booking successful", "ticketId": booking_id})
         
     except Exception as e:

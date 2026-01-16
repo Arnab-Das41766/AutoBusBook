@@ -39,6 +39,21 @@ async function logout() {
 }
 
 // --- Page: Search (Index) ---
+async function loadCitySuggestions() {
+    try {
+        const res = await fetch('/api/cities');
+        if (res.ok) {
+            const cities = await res.json();
+            const dataList = document.getElementById('city-list');
+            if (dataList) {
+                dataList.innerHTML = cities.map(city => `<option value="${city}">`).join('');
+            }
+        }
+    } catch (e) {
+        console.error("Failed to load city suggestions", e);
+    }
+}
+
 async function searchBuses(e) {
     if (e) e.preventDefault();
 
@@ -441,3 +456,6 @@ if (window.location.pathname.startsWith('/ticket/')) {
 
 // Init
 checkAuth();
+if (document.getElementById('from')) {
+    loadCitySuggestions();
+}
