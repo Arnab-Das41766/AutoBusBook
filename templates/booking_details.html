@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passenger Details - AutoBusBook</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container header-content">
+            <a href="/" class="logo">AutoBusBook</a>
+            <nav>
+                <a href="/" class="nav-link">Home</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h2>Enter Passenger Details</h2>
+        <div id="booking-summary-card" class="bus-card" style="margin-bottom: 2rem;">
+            <!-- filled by JS -->
+            Loading trip details...
+        </div>
+
+        <form id="passenger-form" onsubmit="submitBooking(event)">
+            <div id="passenger-list">
+                <!-- filled by JS -->
+            </div>
+
+            <div style="margin-top: 2rem; text-align: right;">
+                <p class="total-price" style="font-size: 1.5rem; margin-bottom: 1rem;">Total: <span
+                        id="total-price">--</span></p>
+                <button type="submit" class="search-btn" style="width: auto; padding: 1rem 3rem;">Pay & Book</button>
+            </div>
+        </form>
+    </main>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closePaymentModal()">&times;</span>
+            <h2>Scan to Pay</h2>
+            <div style="text-align: center; margin: 2rem 0;">
+                <p style="margin-bottom: 1rem;">Total Amount: <strong id="pay-amount"
+                        style="font-size: 1.2rem;"></strong></p>
+                <img src="/static/payment_qr_placeholder.png" alt="Scan QR Code"
+                    style="width: 250px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">Scan with any UPI app (GPay, PhonePe,
+                    Paytm)</p>
+            </div>
+            <button id="verify-payment-btn" class="primary" onclick="verifyPayment()">I have Paid</button>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>

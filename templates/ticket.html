@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Confirmed - AutoBusBook</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .ticket-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .ticket-header {
+            border-bottom: 2px dashed #ddd;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pnr-box {
+            background: #f0f0f0;
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        .passenger-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container header-content">
+            <a href="/" class="logo">AutoBusBook</a>
+            <nav>
+                <a href="/" class="nav-link">Home</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="ticket-container" id="ticket-content">
+            <div style="text-align: center; color: green; margin-bottom: 1rem;">
+                <h1>Booking Confirmed! ✅</h1>
+            </div>
+
+            <div id="ticket-details-loader">Loading ticket...</div>
+
+            <!-- JS populates this -->
+            <div id="ticket-body" style="display:none;">
+                <div class="ticket-header">
+                    <div>
+                        <h2 id="t-operator">Operator Name</h2>
+                        <p id="t-route">From -> To</p>
+                    </div>
+                    <div class="pnr-box">PNR: <span id="t-pnr"></span></div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <strong>Date:</strong> <span id="t-date"></span> |
+                    <strong>Time:</strong> <span id="t-time"></span>
+                </div>
+
+                <h3>Passengers</h3>
+                <div id="t-passengers">
+                    <!-- list -->
+                </div>
+
+                <div style="margin-top: 2rem; text-align: right; font-size: 1.2rem;">
+                    <strong>Total Paid: ₹<span id="t-amount"></span></strong>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; flex-direction: column; align-items: center;">
+                    <div id="qrcode"
+                        style="padding: 10px; background: white; border: 1px solid #ddd; border-radius: 8px;"></div>
+                    <p style="margin-top: 5px; font-size: 0.8rem; color: #666;">Scan for Passenger Details</p>
+                </div>
+
+                <div style="margin-top:2rem; text-align: center;">
+                    <button class="primary" onclick="window.print()">Print Ticket</button>
+                    <button class="primary" style="background:var(--secondary)" onclick="window.location.href='/'">Book
+                        Another</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+
+</html>

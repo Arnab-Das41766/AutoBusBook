@@ -21,6 +21,7 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
+        
 
 def init_db():
     with app.app_context():
@@ -77,6 +78,7 @@ def init_db():
                 user_id INTEGER NOT NULL,
                 schedule_id INTEGER NOT NULL,
                 seats TEXT NOT NULL, -- JSON list of seat numbers
+                passengers TEXT, -- JSON list of passenger details
                 total_amount REAL NOT NULL,
                 status TEXT DEFAULT 'confirmed',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -99,6 +101,13 @@ def init_db():
         except sqlite3.OperationalError:
             print("Migrating DB: Adding Age column...")
             db.execute("ALTER TABLE users ADD COLUMN age INTEGER")
+
+        # Migration 3: Check if passengers exists in bookings
+        try:
+            db.execute("SELECT passengers FROM bookings LIMIT 1")
+        except sqlite3.OperationalError:
+            print("Migrating DB: Adding Passengers column...")
+            db.execute("ALTER TABLE bookings ADD COLUMN passengers TEXT")
         
         db.commit()
 
@@ -199,6 +208,14 @@ def seat_selection():
 @app.route('/register')
 def register_page():
     return render_template('register.html')
+
+@app.route('/booking-details')
+def booking_details_page():
+    return render_template('booking_details.html')
+
+@app.route('/ticket/<path:path>')
+def ticket_page(path):
+    return render_template('ticket.html')
 
 # --- Auth APIs ---
 from flask import session
@@ -429,7 +446,7 @@ def api_book():
     try:
         schedule_id = data.get('scheduleId')
         seat_numbers = data.get('seats') # List of strings e.g. ['2A', '2B']
-        # user_details = data.get('user') # No longer trust client for user
+        passengers = data.get('passengers') # List of dicts
         
         user_id = session['user_id']
 
@@ -442,16 +459,62 @@ def api_book():
         
         total = sch['price'] * len(seat_numbers)
         
-        db.execute('''
-            INSERT INTO bookings (user_id, schedule_id, seats, total_amount, status)
-            VALUES (?, ?, ?, ?, 'confirmed')
-        ''', (user_id, schedule_id, json.dumps(seat_numbers), total))
+        # Verify passenger count matches seats
+        if passengers and len(passengers) != len(seat_numbers):
+             return jsonify({"error": "Passenger details missing for some seats"}), 400
+
+        # --- CRITICAL: Check for Double Booking ---
+        # Get all currently booked seats for this schedule
+        cur = db.execute("SELECT seats FROM bookings WHERE schedule_id = ? AND status = 'confirmed'", (schedule_id,))
+        rows = cur.fetchall()
+        booked_seats = set()
+        for row in rows:
+            booked_seats.update(json.loads(row['seats']))
+        
+        # Check if any requested seat is in booked_seats
+        for seat in seat_numbers:
+            if seat in booked_seats:
+                return jsonify({"error": f"Seat {seat} has just been booked by someone else. Please select another seat."}), 409
+        # ------------------------------------------
+
+        cur = db.execute('''
+            INSERT INTO bookings (user_id, schedule_id, seats, passengers, total_amount, status)
+            VALUES (?, ?, ?, ?, ?, 'confirmed')
+        ''', (user_id, schedule_id, json.dumps(seat_numbers), json.dumps(passengers) if passengers else None, total))
         db.commit()
         
-        return jsonify({"message": "Booking successful", "ticketId": f"TKT-{datetime.now().timestamp()}"})
+        booking_id = cur.lastrowid
+        return jsonify({"message": "Booking successful", "ticketId": booking_id})
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/ticket/<int:id>')
+def api_ticket(id):
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    query = '''
+        SELECT bk.id, bk.total_amount, bk.passengers, bk.seats,
+               s.departure_time, s.travel_date,
+               r.from_city, r.to_city, bo.name as operator
+        FROM bookings bk
+        JOIN schedules s ON bk.schedule_id = s.id
+        JOIN routes r ON s.route_id = r.id
+        JOIN buses b ON s.bus_id = b.id
+        JOIN bus_operators bo ON b.operator_id = bo.id
+        WHERE bk.id = ? AND bk.user_id = ?
+    '''
+    db = get_db()
+    cur = db.execute(query, (id, session['user_id']))
+    row = cur.fetchone()
+    if row:
+        data = dict(row)
+        # Parse passengers if stored as string
+        if isinstance(data['passengers'], str):
+            data['passengers'] = json.loads(data['passengers'])
+        return jsonify(data)
+    return jsonify({"error": "Ticket not found"}), 404
 
 if __name__ == '__main__':
     init_db() # Ensure tables/columns exist
