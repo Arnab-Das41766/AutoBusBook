@@ -1,14 +1,50 @@
+/* --- Use CSS Variables for Theming --- */
 :root {
-    --primary-color: #d12e2e;
-    /* OYO-like Red */
-    --primary-hover: #b02222;
-    --text-color: #333;
-    --white: #fff;
-    --bg-color: #f5f5f5;
-    --card-bg: #fff;
-    --input-border: #ddd;
-    --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    /* Brand Colors */
+    --primary-gradient: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+    --secondary-gradient: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
+    --accent-color: #FF4B2B;
+
+    /* Light Theme (Default) */
+    --text-main: #1A1A1A;
+    --text-light: #555555;
+    --bg-body: #F0F2F5;
+    --white: #FFFFFF;
+
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.6);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    --backdrop-blur: blur(12px);
+
+    --card-bg: white;
+    --input-bg: #f9f9f9;
+    --input-border: transparent;
+
+    /* Layout */
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 8px;
+    --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
+
+/* --- Dark Theme Overrides --- */
+[data-theme="dark"] {
+    --text-main: #f0f0f0;
+    --text-light: #aaaaaa;
+    --bg-body: #121212;
+    --white: #1E1E1E;
+    /* Re-purposed for 'card' backgrounds */
+
+    --glass-bg: rgba(30, 30, 30, 0.7);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+    --card-bg: #1e1e1e;
+    --input-bg: #2d2d2d;
+    --input-border: #444;
+    --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
 
 * {
     box-sizing: border-box;
@@ -18,364 +54,422 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    margin: 0;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background: var(--bg-body);
+    background-image:
+        radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+        radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+        radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+    background-size: 100% 100vh;
+    background-attachment: fixed;
+    color: var(--text-main);
+    min-height: 100vh;
+    line-height: 1.6;
 }
 
-/* --- Auth Pages Split Layout --- */
-.auth-wrapper {
+h1,
+h2,
+h3,
+h4,
+.logo,
+.hero-content h1 {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* --- Navigation --- */
+header {
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border-bottom: var(--glass-border);
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
     display: flex;
-    min-height: 100vh;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
     width: 100%;
 }
 
-.auth-image {
-    flex: 1;
-    background: url('/static/auth_hero.png') no-repeat center center/cover;
-    position: relative;
-    display: none;
+.logo {
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
 }
 
-.auth-image::after {
+nav a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-weight: 600;
+    margin-left: 20px;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: var(--accent-color);
+}
+
+/* --- Hero Section --- */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.hero-section {
+    position: relative;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 4rem;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-hover);
+}
+
+/* Dynamic Background for Hero */
+.hero-section::before {
     content: '';
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7));
+    background: url('/static/auth_hero.png') center/cover;
+    filter: brightness(0.6);
+    z-index: -1;
+    animation: zoomIn 20s infinite alternate;
 }
 
-.auth-image-content {
-    position: absolute;
-    bottom: 40px;
-    left: 40px;
-    right: 40px;
-    color: white;
-    z-index: 2;
-}
-
-.auth-image-content h2 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-    font-weight: 700;
-}
-
-.auth-form-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-    position: relative;
-    background: white;
-    max-width: 600px;
-}
-
-@media (min-width: 768px) {
-    .auth-image {
-        display: block;
+@keyframes zoomIn {
+    from {
+        transform: scale(1);
     }
 
-    .auth-form-container {
-        max-width: 50%;
+    to {
+        transform: scale(1.1);
     }
-}
-
-.auth-card {
-    width: 100%;
-    max-width: 400px;
-}
-
-.logo-auth {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: var(--primary-color);
-    margin-bottom: 2rem;
-    display: block;
-    text-decoration: none;
-}
-
-/* --- Components --- */
-.form-group {
-    margin-bottom: 1.2rem;
-}
-
-.form-group label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 0.5rem;
-    display: block;
-}
-
-input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--input-border);
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
-
-input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(209, 46, 46, 0.1);
-}
-
-button.primary {
-    background: var(--primary-color);
-    color: white;
-    padding: 14px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    width: 100%;
-    transition: background 0.3s;
-}
-
-button.primary:hover {
-    background: var(--primary-hover);
-}
-
-.text-center {
-    text-align: center;
-}
-
-.text-muted {
-    color: #888;
-    font-size: 0.9rem;
-}
-
-.link-primary {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.link-primary:hover {
-    text-decoration: underline;
-}
-
-.msg {
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
-}
-
-/* --- Main App Layout (Header/Nav) --- */
-/* Re-adding these so the main app doesn't break */
-header {
-    background: var(--white);
-    padding: 1rem 2rem;
-    box-shadow: var(--shadow);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--primary-color);
-    text-decoration: none;
-}
-
-nav a {
-    text-decoration: none;
-    color: #555;
-    margin-left: 20px;
-    font-weight: 500;
-}
-
-main {
-    flex: 1;
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-/* Bus Search Cards (Legacy Compatibility) */
-/* --- Home Page Premium Design --- */
-.hero-section {
-    position: relative;
-    height: 480px;
-    border-radius: 12px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 3rem;
-    background: url('/static/auth_hero.png') no-repeat center center/cover;
-    box-shadow: var(--shadow);
-}
-
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7));
-    z-index: 1;
-}
-
-.hero-content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    color: white;
-    margin-bottom: 2rem;
 }
 
 .hero-content h1 {
-    font-size: 2.8rem;
-    font-weight: 800;
+    font-size: 3.5rem;
+    color: white;
     margin-bottom: 0.5rem;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.8s ease-out;
 }
 
 .hero-content p {
-    font-size: 1.2rem;
-    opacity: 0.9;
+    font-size: 1.4rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 2rem;
+    animation: slideUp 1s ease-out;
 }
 
+/* --- Glass Search Widget --- */
 .search-widget {
-    position: relative;
-    z-index: 3;
-    background: white;
-    padding: 1.5rem 2rem;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    background: var(--glass-bg);
+    backdrop-filter: var(--backdrop-blur);
+    border: var(--glass-border);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
     width: 90%;
     max-width: 1000px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    transform: translateY(40px);
+    /* Overlap hero */
+    animation: slideUp 1.2s ease-out;
 }
 
 .search-form {
     display: flex;
     gap: 1.5rem;
-    width: 100%;
     align-items: flex-end;
 }
 
-.search-form .form-group {
+.form-group {
     flex: 1;
-    margin-bottom: 0;
+    position: relative;
 }
 
-.search-form .form-group label {
+.form-group label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-light);
     text-transform: uppercase;
-    font-size: 0.75rem;
-    color: #888;
-    letter-spacing: 0.5px;
-    font-weight: 700;
-}
-
-.search-btn {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 0 2rem;
-    height: 48px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.search-btn:hover {
-    background: var(--primary-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(209, 46, 46, 0.4);
-}
-
-/* --- Result Cards --- */
-.results-section {
-    padding: 2rem 0;
-}
-
-.results-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.bus-card {
-    background: var(--white);
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #f0f0f0;
-    transition: all 0.3s ease;
-    border-left: 5px solid transparent;
-}
-
-.bus-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-    border-left-color: var(--primary-color);
-}
-
-.bus-info h3 {
-    color: var(--primary-color);
+    letter-spacing: 1px;
     margin-bottom: 0.5rem;
+    display: block;
 }
 
-.bus-price {
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-/* Seat Layout */
-.seat-layout {
-    display: grid;
-    grid-template-columns: repeat(4, 50px);
-    gap: 10px;
-    margin: 0 auto;
-    width: max-content;
-    background: #e0e0e0;
-    padding: 20px;
-    border-radius: 12px;
-}
-
-.seat {
+/* Theme Toggle Button */
+.theme-toggle {
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    color: var(--text-main);
     width: 40px;
     height: 40px;
-    background: #fff;
-    border: 1px solid #ccc;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+    margin-left: 20px;
+}
+
+.theme-toggle:hover {
+    transform: rotate(15deg) scale(1.1);
+    background: var(--white);
+}
+
+input,
+select {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text-main);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    background: var(--white);
+    /* Or slightly lighter than input-bg */
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 4px rgba(255, 75, 43, 0.1);
+}
+
+.search-btn {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 0 2.5rem;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 20px rgba(255, 75, 43, 0.3);
+}
+
+.search-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(255, 75, 43, 0.4);
+}
+
+/* --- Results Grid --- */
+.results-section {
+    padding-top: 5rem;
+    /* Space for overlapped search widget */
+    padding-bottom: 4rem;
+}
+
+.bus-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(5px);
+    border-radius: var(--radius-md);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.bus-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    background: var(--primary-gradient);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.bus-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+.bus-card:hover::before {
+    opacity: 1;
+}
+
+.bus-company h3 {
+    font-size: 1.4rem;
+    color: var(--text-main);
+}
+
+.rating {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 8px;
     border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-left: 10px;
+}
+
+.bus-type {
+    color: var(--text-light);
+    margin-top: 5px;
+    font-size: 0.95rem;
+}
+
+.bus-route-time {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+    gap: 2rem;
+}
+
+.time-loc strong {
+    font-size: 1.2rem;
+    display: block;
+    font-family: 'Outfit', sans-serif;
+}
+
+.duration-strip {
+    flex: 1;
+    min-width: 100px;
+    text-align: center;
+    position: relative;
+}
+
+.dur-line {
+    display: block;
+    height: 2px;
+    background: #eee;
+    margin-top: 6px;
+}
+
+.dur-text {
+    background: white;
+    padding: 0 10px;
+    color: #888;
+    font-size: 0.8rem;
+    position: relative;
+    top: -8px;
+}
+
+.price .amount {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    display: block;
+    text-align: right;
+}
+
+.price .label {
+    font-size: 0.8rem;
+    color: #888;
+    display: block;
+    text-align: right;
+}
+
+/* --- Seat Map Styling --- */
+.seat-layout {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-hover);
+    width: fit-content;
+    margin: 2rem auto;
+}
+
+.driver-cabin {
+    text-align: right;
+    padding: 10px;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #aaa;
+}
+
+.seats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.seat-row {
+    display: flex;
+    gap: 12px;
+}
+
+.seat {
+    width: 45px;
+    height: 45px;
+    border-radius: 8px;
+    border: 2px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.seat:not(.booked):hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    transform: scale(1.1);
 }
 
 .seat.selected {
-    background: var(--primary-color);
-    color: #fff;
-    border-color: var(--primary-hover);
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 10px rgba(255, 75, 43, 0.4);
 }
 
 .seat.booked {
-    background: #9e9e9e;
-    color: #fff;
+    background: #e0e0e0;
+    color: #aaa;
+    border-color: transparent;
     cursor: not-allowed;
 }
 
-/* Modal Styles */
+/* --- Modal & Animations --- */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .modal {
     position: fixed;
     z-index: 1000;
@@ -383,50 +477,231 @@ main {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(5px);
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
 }
 
-.modal-content {
-    background-color: #fefefe;
-    padding: 2rem;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 400px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    position: relative;
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        transform: translateY(-50px);
-        opacity: 0;
-    }
-
+@keyframes fadeIn {
     to {
-        transform: translateY(0);
         opacity: 1;
     }
 }
 
-.close-modal {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    position: absolute;
-    right: 20px;
-    top: 10px;
+.modal-content {
+    background: white;
+    padding: 2.5rem;
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    transform: scale(0.9);
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-.close-modal:hover,
-.close-modal:focus {
-    color: black;
-    text-decoration: none;
+@keyframes popIn {
+    to {
+        transform: scale(1);
+    }
+}
+
+/* Button & Link Helpers */
+button.primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 6px rgba(255, 75, 43, 0.2);
+}
+
+button.primary:hover {
+    box-shadow: 0 8px 16px rgba(255, 75, 43, 0.4);
+    transform: translateY(-2px);
+}
+
+/* --- Passenger Card Styles --- */
+.passenger-card {
+    background: var(--white);
+    /* Adapts to dark mode */
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--glass-border);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.passenger-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: rgba(255, 75, 43, 0.2);
+}
+
+.passenger-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.passenger-header h4 {
+    font-size: 1.1rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+.seat-badge {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.gender-selection {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.gender-selection .label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.radio-group {
+    display: flex;
+    gap: 2rem;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text-light);
+}
+
+.radio-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--accent-color);
+    cursor: pointer;
+}
+
+/* --- Refined Seat Map --- */
+.seat {
+    border-radius: 8px 8px 12px 12px;
+    /* Slight seat shape */
+    border-bottom-width: 4px;
+}
+
+.seat.selected {
+    box-shadow: 0 0 15px rgba(255, 75, 43, 0.5);
+    border-bottom: none;
+    transform: scale(1.05);
+}
+
+/* Auth Page overrides */
+/* --- Auth Page Styles --- */
+.auth-wrapper {
+    background: var(--bg-body);
+    background-image: radial-gradient(circle at top right, rgba(255, 75, 43, 0.1), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(74, 0, 224, 0.1), transparent 40%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.auth-image {
+    display: none;
+    /* Hiding side content for a focused, centered card */
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 450px;
+    z-index: 2;
+}
+
+.auth-card {
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    backdrop-filter: var(--backdrop-blur);
+    padding: 3rem 2.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    text-align: center;
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-card .logo-auth {
+    display: inline-block;
+    font-size: 1.5rem;
+    font-weight: 800;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 2rem;
+    text-decoration: none;
+}
+
+.link-primary {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+.link-primary:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+/* Dark mode adjustment for auth page specifically if needed */
+[data-theme="dark"] .auth-wrapper {
+    background-image: radial-gradient(circle at top right, rgba(255, 75, 43, 0.2), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(74, 0, 224, 0.2), transparent 40%);
 }

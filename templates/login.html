@@ -7,10 +7,22 @@
     <title>Login - AutoBusBook</title>
     <link rel="stylesheet" href="/static/style.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
+    <header class="main-header">
+        <div class="container header-content">
+            <a href="/" class="logo">AutoBusBook</a>
+            <nav>
+                <a href="/" class="nav-link">Home</a>
+            </nav>
+        </div>
+    </header>
 
     <div class="auth-wrapper">
         <!-- Left Side: Hero Image -->
@@ -24,7 +36,7 @@
         <!-- Right Side: Form -->
         <div class="auth-form-container">
             <div class="auth-card">
-                <a href="/" class="logo-auth">AutoBusBook</a>
+
 
                 <div id="step-email" class="login-step active">
                     <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 0.5rem;">Welcome Back</h1>
@@ -75,6 +87,7 @@
         </div>
     </div>
 
+    <script src="/static/script.js"></script>
     <script>
         const emailForm = document.getElementById('email-form');
         const otpForm = document.getElementById('otp-form');

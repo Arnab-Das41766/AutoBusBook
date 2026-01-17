@@ -38,6 +38,45 @@ async function logout() {
     window.location.reload();
 }
 
+// --- Theme Logic ---
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    // Inject Toggle into Header for ALL pages
+    const header = document.querySelector('header .header-content');
+    if (header) {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'theme-toggle';
+        toggleBtn.innerHTML = savedTheme === 'dark' ? '☀️' : '🌙';
+        toggleBtn.onclick = toggleTheme;
+        toggleBtn.title = "Toggle Theme";
+
+        // Insert before nav or append
+        const nav = header.querySelector('nav');
+        if (nav) {
+            header.insertBefore(toggleBtn, nav);
+        } else {
+            header.appendChild(toggleBtn);
+        }
+    }
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const target = current === 'light' ? 'dark' : 'light';
+
+    document.documentElement.setAttribute('data-theme', target);
+    localStorage.setItem('theme', target);
+
+    // Update Icon
+    const btn = document.querySelector('.theme-toggle');
+    if (btn) btn.innerHTML = target === 'dark' ? '☀️' : '🌙';
+}
+
+// Check on load
+document.addEventListener('DOMContentLoaded', initTheme);
+
 // --- Page: Search (Index) ---
 async function loadCitySuggestions() {
     try {
@@ -265,25 +304,43 @@ if (window.location.pathname === '/booking-details') {
     // Generate Forms
     selectedSeats.forEach((seat, index) => {
         const div = document.createElement('div');
-        div.className = 'passenger-row-form';
-        div.style.marginBottom = '1.5rem';
-        div.style.padding = '1rem';
-        div.style.background = '#f9f9f9';
-        div.style.borderRadius = '8px';
+        div.className = 'passenger-row-form passenger-card';
 
         div.innerHTML = `
-            <h4>Passenger ${index + 1} (Seat ${seat})</h4>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <input type="text" placeholder="Full Name" required minlength="3" class="p-name" data-seat="${seat}">
-                <input type="number" placeholder="Age" required min="1" max="120" class="p-age">
+            <div class="passenger-header">
+                <h4>Passenger ${index + 1}</h4>
+                <span class="seat-badge">Seat ${seat}</span>
             </div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-                <input type="email" placeholder="Email ID" required class="p-email">
-                <input type="tel" placeholder="Phone (Optional)" class="p-phone">
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" placeholder="e.g. John Doe" required minlength="3" class="p-name" data-seat="${seat}">
+                </div>
+                <div class="input-group">
+                    <label>Age</label>
+                    <input type="number" placeholder="18+" required min="1" max="120" class="p-age">
+                </div>
+                <div class="input-group">
+                    <label>Email ID</label>
+                    <input type="email" placeholder="john@example.com" required class="p-email">
+                </div>
+                <div class="input-group">
+                    <label>Phone (Optional)</label>
+                    <input type="tel" placeholder="+91 98765..." class="p-phone">
+                </div>
             </div>
-            <div style="margin-top:10px;">
-                <label style="margin-right:15px;"><input type="radio" name="g-${seat}" value="Male" checked> Male</label>
-                <label><input type="radio" name="g-${seat}" value="Female"> Female</label>
+            <div class="gender-selection">
+                <span class="label">Gender:</span>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="g-${seat}" value="Male" checked>
+                        <span>Male</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="g-${seat}" value="Female">
+                        <span>Female</span>
+                    </label>
+                </div>
             </div>
         `;
         passengerList.appendChild(div);
@@ -308,42 +365,95 @@ if (window.location.pathname === '/booking-details') {
     // Global function for form submission
     window.submitBooking = async function (e) {
         e.preventDefault();
+        console.log("Starting submitBooking...");
 
-        const passengers = [];
-        const rows = document.querySelectorAll('.passenger-row-form');
+        try {
+            // Validation: Ensure Booking Data Exists
+            if (!selectedSeats || selectedSeats.length === 0) {
+                alert("Error: No seats selected. Please go back and select seats.");
+                console.error("Validation Failed: No seats");
+                return;
+            }
+            if (!pricePerSeat) {
+                alert("Error: Invalid price data. Please search again.");
+                console.error("Validation Failed: No price");
+                return;
+            }
 
-        rows.forEach(row => {
-            const name = row.querySelector('.p-name').value;
-            const age = row.querySelector('.p-age').value;
-            const email = row.querySelector('.p-email').value;
-            const phone = row.querySelector('.p-phone').value;
-            const seat = row.querySelector('.p-name').dataset.seat;
-            const gender = row.querySelector(`input[name="g-${seat}"]:checked`).value;
+            const passengers = [];
+            const rows = document.querySelectorAll('.passenger-row-form');
 
-            passengers.push({ name, age, email, phone, gender, seat });
-        });
+            if (rows.length === 0) {
+                alert("Error: No passenger forms found.");
+                console.error("Validation Failed: No passenger rows");
+                return;
+            }
 
-        // --- Auth Check on Payment ---
-        const isAuth = await checkAuth();
-        if (!isAuth) {
-            // Save state and redirect
-            alert("Please login to complete your booking.");
-            sessionStorage.setItem('pendingPassengers', JSON.stringify(passengers));
-            window.location.href = `/login?redirect=/booking-details`;
-            return;
+            // Collect Passenger Data
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const name = row.querySelector('.p-name').value;
+                const age = row.querySelector('.p-age').value;
+                const email = row.querySelector('.p-email').value;
+                const phone = row.querySelector('.p-phone').value;
+                const seat = row.querySelector('.p-name').dataset.seat;
+
+                // Radio buttons need careful handling
+                const genderInput = row.querySelector(`input[name="g-${seat}"]:checked`);
+                const gender = genderInput ? genderInput.value : 'Male';
+
+                if (!name || !age || !email) {
+                    alert(`Please fill all required fields for Seat ${seat}`);
+                    console.warn(`Validation Failed: Missing fields for seat ${seat}`);
+                    return;
+                }
+
+                passengers.push({ name, age, email, phone, gender, seat });
+            }
+
+            console.log("Passengers collected:", passengers);
+
+            // --- Auth Check on Payment ---
+            console.log("Checking Auth...");
+            const isAuth = await checkAuth();
+            console.log("Auth Status:", isAuth);
+
+            if (!isAuth) {
+                // Save state and redirect
+                alert("Please login to complete your booking.");
+                sessionStorage.setItem('pendingPassengers', JSON.stringify(passengers));
+                window.location.href = `/login?redirect=/booking-details`;
+                return;
+            }
+
+            // --- SHOW PAYMENT MODAL ---
+            const totalAmount = selectedSeats.length * pricePerSeat;
+            console.log("Total Amount:", totalAmount);
+
+            const payAmountEl = document.getElementById('pay-amount');
+            const modalEl = document.getElementById('payment-modal');
+
+            if (payAmountEl) payAmountEl.innerText = formatMoney(totalAmount);
+            if (modalEl) {
+                modalEl.style.display = 'flex';
+            } else {
+                console.error("Payment Modal element not found!");
+                alert("Internal Error: Payment screen missing.");
+                return;
+            }
+
+            // Store for verify step
+            window.pendingBookingData = {
+                scheduleId,
+                seats: selectedSeats,
+                passengers
+            };
+            console.log("Payment Modal Shown. Pending Data:", window.pendingBookingData);
+
+        } catch (err) {
+            console.error("CRITICAL ERROR inside submitBooking:", err);
+            alert("An unexpected error occurred during booking: " + err.message);
         }
-
-        // --- SHOW PAYMENT MODAL ---
-        const totalAmount = selectedSeats.length * pricePerSeat;
-        document.getElementById('pay-amount').innerText = formatMoney(totalAmount);
-        document.getElementById('payment-modal').style.display = 'flex';
-
-        // Store for verify step
-        window.pendingBookingData = {
-            scheduleId,
-            seats: selectedSeats,
-            passengers
-        };
     };
 
     // Called by Modal "I have Paid" button
