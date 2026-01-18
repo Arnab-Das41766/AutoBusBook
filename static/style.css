@@ -75,14 +75,88 @@ a {
     z-index: 1000;
     padding: 1.5rem 0;
     background: transparent;
-    transition: background 0.4s ease, padding 0.4s ease;
+    transition: padding 0.4s ease;
 }
 
 .main-header.scrolled {
-    background: rgba(10, 10, 10, 0.8);
-    backdrop-filter: blur(12px);
     padding: 1rem 0;
-    border-bottom: 1px solid var(--border-light);
+    /* Background moved to internal prism */
+}
+
+.glass-prism-nav {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.3),
+        inset 0 0 20px rgba(255, 255, 255, 0.05);
+    border-radius: 50px;
+    padding: 0.8rem 2rem;
+    width: 90%;
+    max-width: 1100px;
+    margin: 0 auto;
+    transition: all 0.4s ease;
+}
+
+.glass-prism-nav:hover {
+    box-shadow:
+        0 15px 40px 0 rgba(0, 0, 0, 0.4),
+        inset 0 0 20px rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.main-header.scrolled .glass-prism-nav {
+    background: rgba(10, 10, 10, 0.6);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.header-content {
+    /* No longer primary container, kept for backward compat if needed */
+    display: flex;
+    justify-content: center;
+    /* Center the prism */
+    width: 100%;
+}
+
+.nav-center-text {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    color: var(--text-main);
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .nav-center-text {
+        position: relative;
+        left: auto;
+        transform: none;
+        font-size: 0.8rem;
+    }
+
+    .glass-prism-nav {
+        flex-direction: column;
+        gap: 10px;
+        padding: 1rem;
+        width: 95%;
+        border-radius: 20px;
+    }
+
+    .nav-menu {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 .header-content {

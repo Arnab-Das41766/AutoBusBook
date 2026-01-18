@@ -17,12 +17,27 @@ async function checkAuth() {
     try {
         const res = await fetch('/api/me');
         const data = await res.json();
+
+        // Update Center Text (Name)
+        const centerText = document.querySelector('.nav-center-text');
+        if (centerText) {
+            if (data.authenticated) {
+                centerText.textContent = `Hi, ${data.name}`;
+            } else {
+                centerText.textContent = "Hello Guest User";
+            }
+        }
+
         const nav = document.querySelector('.nav-menu');
-        // If logged in, replace "Login" link with User info
+        // If logged in, handle login/logout link logic if it exists
+        // Note: In new design, we might want to append a logout button or change "Book Now" behavior if needed, 
+        // but primarily ensuring the name is updated as requested.
+
         if (data.authenticated && nav) {
+            // Check for existing login link to replace, or append Logout if missing and appropriate
             const loginLink = nav.querySelector('a[href="/login"]');
             if (loginLink) {
-                loginLink.textContent = `Hi, ${data.name}`;
+                loginLink.textContent = "Logout";
                 loginLink.href = "#";
                 loginLink.onclick = (e) => { e.preventDefault(); logout(); };
             }
@@ -30,6 +45,9 @@ async function checkAuth() {
         return data.authenticated;
     } catch (e) {
         console.error("Auth check failed", e);
+        // Fallback
+        const centerText = document.querySelector('.nav-center-text');
+        if (centerText) centerText.textContent = "Hello Guest User";
         return false;
     }
 }

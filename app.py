@@ -161,7 +161,23 @@ def seed_data():
                 ('Chennai', 'Bangalore', '6h 00m'),
                 ('Hyderabad', 'Vijayawada', '5h 30m'),
                 ('Delhi', 'Jaipur', '5h 45m'),
-                ('Pune', 'Goa', '9h 15m')
+                ('Pune', 'Goa', '9h 15m'),
+                # New Routes
+                ('Kolkata', 'Durgapur', '2h 45m'),
+                ('Kolkata', 'Siliguri', '12h 00m'),
+                ('Kolkata', 'Digha', '4h 30m'),
+                ('Delhi', 'Agra', '3h 30m'),
+                ('Delhi', 'Rishikesh', '5h 15m'),
+                ('Mumbai', 'Surat', '4h 45m'),
+                ('Bangalore', 'Mysuru', '3h 00m'),
+                ('Hyderabad', 'Bangalore', '8h 30m'),
+                ('Chennai', 'Pondicherry', '3h 15m'),
+                ('Jaipur', 'Udaipur', '7h 00m'),
+                ('Ahmedabad', 'Mumbai', '8h 00m'),
+                ('Lucknow', 'Delhi', '7h 30m'),
+                ('Varanasi', 'Prayagraj', '2h 30m'),
+                ('Bhopal', 'Indore', '3h 45m'),
+                ('Chandigarh', 'Manali', '7h 00m')
             ]
             for f, t, d in routes_data:
                 cur = db.execute("INSERT INTO routes (from_city, to_city, duration) VALUES (?, ?, ?)", (f, t, d))
