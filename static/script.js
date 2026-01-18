@@ -109,7 +109,8 @@ function initAnimations() {
         });
     }
 
-    // 3. Staggered Feature Cards
+    // 3. Staggered Feature Cards - DISABLED (CSS handles hover effects now, and this was causing visibility issues)
+    /*
     gsap.from('.feature-card', {
         scrollTrigger: {
             trigger: '.feature-grid',
@@ -121,6 +122,7 @@ function initAnimations() {
         stagger: 0.2,
         ease: "back.out(1.7)"
     });
+    */
 
     // 4. Parallax Effect
     gsap.to('.parallax-bg', {
@@ -173,6 +175,8 @@ async function searchBuses(e) {
     if (!resultsDiv) return;
 
     resultsDiv.innerHTML = '<div class="loader" style="color:white; text-align:center;">Searching best buses for you...</div>';
+    // Use the menu class for the results container
+    resultsDiv.className = '';
 
     // Scroll to results
     gsap.to(window, { duration: 1, scrollTo: "#results-area" });
@@ -182,6 +186,7 @@ async function searchBuses(e) {
         const buses = await res.json();
 
         resultsDiv.innerHTML = '';
+        resultsDiv.className = ''; // Clear any specific menu classes
 
         if (buses.length === 0) {
             resultsDiv.innerHTML = '<div class="no-results" style="color:white; text-align:center; padding:2rem;">No buses found for this route/date completely.</div>';

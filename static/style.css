@@ -360,9 +360,8 @@ a {
     line-height: 1.1;
     max-width: 800px;
     margin: 0 auto;
-    background: linear-gradient(180deg, #fff, #888);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: white;
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
 }
 
 .feature-grid {
@@ -376,21 +375,76 @@ a {
     padding: 3rem;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-light);
-    transition: transform 0.4s var(--ease-out);
+    transition: all 0.4s var(--ease-out);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 250px;
+    /* Ensure uniform height for effect */
+    background: linear-gradient(145deg, rgba(20, 20, 20, 1) 0%, rgba(30, 30, 30, 1) 100%);
 }
 
 .feature-card:hover {
-    transform: translateY(-10px);
+    transform: translateY(-10px) scale(1.02);
     border-color: var(--accent-primary);
+    box-shadow: 0 10px 40px -10px rgba(99, 68, 255, 0.3);
 }
 
 .feature-card h3 {
     font-size: 1.5rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    transition: transform 0.4s var(--ease-out), color 0.3s;
+    z-index: 2;
+}
+
+.feature-card:hover h3 {
+    transform: translateY(-20px);
+    color: var(--accent-primary);
 }
 
 .feature-card p {
     color: var(--text-muted);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s var(--ease-out);
+    position: absolute;
+    /* Take out of flow to let H3 center initially */
+    bottom: 3rem;
+    padding: 0 2rem;
+    pointer-events: none;
+}
+
+.feature-card:hover p {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Add a glowing orb effect for "surprise" */
+.feature-card::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0;
+    transition: opacity 0.4s;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+}
+
+.feature-card:hover::before {
+    opacity: 0.2;
+    width: 150px;
+    height: 150px;
 }
 
 /* --- Parallax Section --- */
@@ -740,11 +794,8 @@ a {
     border-bottom: 2px dashed var(--border-light);
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
+
+    /* --- Removed Marquee Menu Styles (Reverted to standard bus cards) --- */
 }
 
 .ticket-header h2 {
