@@ -4,65 +4,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoBusBook - Search</title>
+    <title>AutoBusBook - Premium Bus Travel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+
 </head>
 
 <body>
+    <!-- Navigation -->
     <header class="main-header">
         <div class="container header-content">
             <a href="/" class="logo">AutoBusBook</a>
-            <nav>
+            <nav class="nav-menu">
                 <a href="/login" class="nav-link">Login / Signup</a>
+                <a href="#" class="cta-button">Book Now</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <div class="hero-section">
-            <div class="hero-overlay"></div>
-            <div class="hero-content">
-                <h1>India's Most Comfortable Bus Journeys</h1>
-                <p>AC Sleepers, Luxury Seaters & more at lowest prices.</p>
-            </div>
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="container hero-container">
+                <div class="hero-text-wrapper">
+                    <h1 class="hero-title">
+                        <span class="hero-line">DISCOVER</span>
+                        <span class="hero-line">RESERVE</span>
+                        <span class="hero-line highlight">ADVENTURE</span>
+                    </h1>
+                    <p class="hero-subtitle">India's most comfortable bus journeys. Luxury seaters, AC sleepers & more.
+                    </p>
+                </div>
 
-            <div class="search-widget">
-                <form class="search-form" onsubmit="searchBuses(event)">
-                    <div class="form-group">
-                        <label>From</label>
-                        <input type="text" id="from" placeholder="e.g. Delhi" value="Delhi" required list="city-list">
-                    </div>
-                    <div class="form-group">
-                        <label>To</label>
-                        <input type="text" id="to" placeholder="e.g. Manali" value="Manali" required list="city-list">
-                    </div>
-                    <div class="form-group">
-                        <label>Date</label>
-                        <input type="date" id="date" required>
-                    </div>
-                    <button type="submit" class="search-btn">Search Buses</button>
-                    <datalist id="city-list"></datalist>
-                </form>
+                <!-- Search Widget Integrated -->
+                <div class="search-widget-container">
+                    <form class="search-form" onsubmit="searchBuses(event)">
+                        <div class="form-group">
+                            <label for="from">From</label>
+                            <input type="text" id="from" placeholder="City" value="Delhi" required list="city-list">
+                        </div>
+                        <div class="form-group">
+                            <label for="to">To</label>
+                            <input type="text" id="to" placeholder="City" value="Manali" required list="city-list">
+                        </div>
+                        <div class="form-group">
+                            <label for="date">Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        <button type="submit" class="search-btn">Search Buses</button>
+                        <datalist id="city-list"></datalist>
+                    </form>
+                </div>
             </div>
-        </div>
+            <!-- Results Section Moved Inside Hero -->
+            <section class="results-section" id="results-area" style="width: 100%; margin-top: 2rem; display: none;">
+                <div class="container">
+                    <div id="results" class="results-grid">
+                        <!-- JS will populate results here -->
+                    </div>
+                </div>
+            </section>
+            </div>
+            <div class="hero-bg-overlay"></div>
+        </section>
 
-        <section class="results-section">
+        <!-- Reviews Section -->
+        <section class="reviews-section">
             <div class="container">
-                <div id="results" class="results-grid">
-                    <!-- JS will populate results here -->
+                <div class="section-header">
+                    <h2>Loved by Travelers</h2>
+                </div>
+                <div class="reviews-grid">
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="user-avatar">AD</div>
+                            <div class="user-info">
+                                <h4>Arnab Das</h4>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                        </div>
+                        <p>"The sleeper bus was incredibly comfortable. Best journey I've had to Manali!"</p>
+                    </div>
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="user-avatar">JD</div>
+                            <div class="user-info">
+                                <h4>John Doe</h4>
+                                <div class="stars">★★★★☆</div>
+                            </div>
+                        </div>
+                        <p>"Very punctual and clean. The tracking feature helped my family stay worry-free."</p>
+                    </div>
+                    <div class="review-card">
+                        <div class="review-header">
+                            <div class="user-avatar">SP</div>
+                            <div class="user-info">
+                                <h4>Sarah P.</h4>
+                                <div class="stars">★★★★★</div>
+                            </div>
+                        </div>
+                        <p>"Booking was seamless and the support team was super helpful when I had to reschedule."</p>
+                    </div>
                 </div>
             </div>
         </section>
+
+        <!-- Void Filler Parallax Section -->
+        <section class="void-filler-section">
+            <div class="void-overlay"></div>
+        </section>
+
+        <!-- Feature Section 1 -->
+        <section class="feature-section trigger-section">
+            <div class="container">
+                <div class="section-header">
+                    <h2 class="split-text">Seamless city-to-city journeys await</h2>
+                </div>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>Comfort First</h3>
+                        <p>Experience the luxury of premium sleepers and spacious seating.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Safe Travel</h3>
+                        <p>Sanitized buses and professional drivers for your safety.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Best Prices</h3>
+                        <p>Unbeatable rates and exclusive discounts for every trip.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Live Tracking</h3>
+                        <p>Share your live location with family and track your bus in real-time.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>24/7 Support</h3>
+                        <p>Our customer support team is just a call or message away.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Instant Refunds</h3>
+                        <p>Cancel your booking easily and get refunds instantly to your source.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Image Parallax Section -->
+        <section class="parallax-section">
+            <div class="parallax-bg"></div>
+            <div class="content-overlay">
+                <h2 class="parallax-title">Effortless trip management</h2>
+                <p>Track your bus, manage bookings, and get real-time updates.</p>
+            </div>
+        </section>
+
+
     </main>
 
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 AutoBusBook. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- GSAP Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Custom Script -->
     <script src="/static/script.js"></script>
     <script>
-        // Set default date to today
+        // Set default date
         document.getElementById('date').valueAsDate = new Date();
     </script>
 </body>
