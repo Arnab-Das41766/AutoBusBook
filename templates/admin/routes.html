@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Routes - Admin Panel</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .admin-container {
+            padding: 8rem 2rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .admin-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .admin-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .admin-btn:hover,
+        .admin-btn.active {
+            background: #fff;
+            color: #000;
+        }
+
+        .forms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .form-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+        }
+
+        .form-card h3 {
+            color: white;
+            margin-bottom: 1.5rem;
+            font-family: 'Outfit', sans-serif;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.8rem;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #FF6B6B;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: #FF6B6B;
+            border: none;
+            padding: 1rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: #FF8E53;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="glass-prism-nav">
+            <a href="/admin" class="logo">Admin Panel</a>
+            <nav class="nav-menu">
+                <a href="/" class="cta-button">View Site</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <div class="admin-nav">
+            <a href="/admin" class="admin-btn">Dashboard</a>
+            <a href="/admin/bookings" class="admin-btn">Bookings</a>
+            <a href="/admin/routes" class="admin-btn active">Manage Routes</a>
+        </div>
+
+        <div class="forms-grid">
+            <!-- Add Route Form -->
+            <div class="form-card">
+                <h3>Create New Route</h3>
+                <form onsubmit="addRoute(event)">
+                    <div class="form-group">
+                        <label>From City</label>
+                        <input type="text" id="route-from" required placeholder="e.g. Mumbai">
+                    </div>
+                    <div class="form-group">
+                        <label>To City</label>
+                        <input type="text" id="route-to" required placeholder="e.g. Goa">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <input type="text" id="route-duration" required placeholder="e.g. 10h 30m">
+                    </div>
+                    <button type="submit" class="submit-btn" id="route-btn">Add Route</button>
+                    <p id="route-msg" style="margin-top: 10px; color: #2ecc71; display: none;"></p>
+                </form>
+            </div>
+
+            <!-- Add Schedule Form -->
+            <div class="form-card">
+                <h3>Schedule Bus on Route</h3>
+                <form onsubmit="addSchedule(event)">
+                    <div class="form-group">
+                        <label>Select Route</label>
+                        <select id="sched-route" required>
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Select Bus</label>
+                        <select id="sched-bus" required>
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Travel Date</label>
+                        <input type="date" id="sched-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Departure Time</label>
+                        <input type="time" id="sched-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price (₹)</label>
+                        <input type="number" id="sched-price" required placeholder="e.g. 1500">
+                    </div>
+                    <button type="submit" class="submit-btn" id="sched-btn">Add Schedule</button>
+                    <p id="sched-msg" style="margin-top: 10px; color: #2ecc71; display: none;"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadOptions() {
+            // Load Routes
+            const routeRes = await fetch('/api/admin/routes');
+            const routes = await routeRes.json();
+            const routeSelect = document.getElementById('sched-route');
+            routeSelect.innerHTML = '<option value="">Select Route</option>';
+            routes.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.id;
+                opt.textContent = `${r.from_city} → ${r.to_city}`;
+                routeSelect.appendChild(opt);
+            });
+
+            // Load Buses
+            const busRes = await fetch('/api/admin/buses');
+            const buses = await busRes.json();
+            const busSelect = document.getElementById('sched-bus');
+            busSelect.innerHTML = '<option value="">Select Bus</option>';
+            buses.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = `${b.bus_number} (${b.operator} - ${b.bus_type})`;
+                busSelect.appendChild(opt);
+            });
+        }
+        loadOptions();
+
+        async function addRoute(e) {
+            e.preventDefault();
+            const btn = document.getElementById('route-btn');
+            btn.textContent = 'Adding...';
+
+            const data = {
+                from_city: document.getElementById('route-from').value,
+                to_city: document.getElementById('route-to').value,
+                duration: document.getElementById('route-duration').value
+            };
+
+            const res = await fetch('/api/admin/routes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                document.getElementById('route-msg').textContent = 'Route added!';
+                document.getElementById('route-msg').style.display = 'block';
+                e.target.reset();
+                loadOptions(); // Refresh list
+            }
+            btn.textContent = 'Add Route';
+        }
+
+        async function addSchedule(e) {
+            e.preventDefault();
+            const btn = document.getElementById('sched-btn');
+            btn.textContent = 'Adding...';
+
+            const data = {
+                route_id: document.getElementById('sched-route').value,
+                bus_id: document.getElementById('sched-bus').value,
+                travel_date: document.getElementById('sched-date').value,
+                departure_time: document.getElementById('sched-time').value,
+                price: document.getElementById('sched-price').value
+            };
+
+            const res = await fetch('/api/admin/schedules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                document.getElementById('sched-msg').textContent = 'Schedule added!';
+                document.getElementById('sched-msg').style.display = 'block';
+                e.target.reset();
+            }
+            btn.textContent = 'Add Schedule';
+        }
+    </script>
+</body>
+
+</html>

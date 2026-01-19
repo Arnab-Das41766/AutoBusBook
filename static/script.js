@@ -29,17 +29,65 @@ async function checkAuth() {
         }
 
         const nav = document.querySelector('.nav-menu');
-        // If logged in, handle login/logout link logic if it exists
-        // Note: In new design, we might want to append a logout button or change "Book Now" behavior if needed, 
-        // but primarily ensuring the name is updated as requested.
 
         if (data.authenticated && nav) {
-            // Check for existing login link to replace, or append Logout if missing and appropriate
-            const loginLink = nav.querySelector('a[href="/login"]');
-            if (loginLink) {
-                loginLink.textContent = "Logout";
-                loginLink.href = "#";
-                loginLink.onclick = (e) => { e.preventDefault(); logout(); };
+            // Remove existing login/logout links to avoid duplicates
+            const existingLogin = nav.querySelector('a[href="/login"]');
+            if (existingLogin) existingLogin.remove();
+            const existingLogout = nav.querySelector('a[href="#"]');
+            if (existingLogout) existingLogout.remove();
+
+            // Admin Link Check
+            if (data.is_admin) {
+                if (!nav.querySelector('a[href="/admin"]')) {
+                    const adminLink = document.createElement('a');
+                    adminLink.href = '/admin';
+                    adminLink.className = 'nav-link';
+                    adminLink.textContent = 'Admin Panel';
+                    adminLink.style.marginRight = '15px';
+                    nav.insertBefore(adminLink, nav.firstChild);
+                }
+            }
+
+            // Create User Dropdown
+            if (!document.querySelector('.user-dropdown-container')) {
+                const container = document.createElement('div');
+                container.className = 'user-dropdown-container';
+
+                container.innerHTML = `
+                    <button class="user-icon-btn" onclick="toggleUserDropdown(event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </button>
+                    <div class="user-dropdown-menu" id="user-dropdown">
+                        <div style="padding: 10px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 5px;">
+                            <strong style="display:block; color:white; font-size:0.9rem;">${data.name}</strong>
+                            <span style="font-size:0.75rem; color:#888;">${data.email}</span>
+                        </div>
+                        <a href="/my-bookings" class="dropdown-item">
+                            <span>📅</span> My Bookings
+                        </a>
+                        <a href="#" onclick="logout()" class="dropdown-item" style="color:#ff6b6b;">
+                            <span>🚪</span> Logout
+                        </a>
+                    </div>
+                `;
+                nav.appendChild(container);
+            }
+
+        } else if (nav) {
+            // Guest: Check if dropdown exists and remove it
+            if (document.querySelector('.user-dropdown-container')) {
+                document.querySelector('.user-dropdown-container').remove();
+            }
+
+            // Guest mode: Ensure Login link exists if not present
+            if (!nav.querySelector('a[href="/login"]')) {
+                const loginBtn = document.createElement('a');
+                loginBtn.href = "/login";
+                loginBtn.className = "nav-link";
+                loginBtn.textContent = "Login";
+                loginBtn.style.marginRight = '15px';
+                nav.prepend(loginBtn);
             }
         }
         return data.authenticated;
@@ -56,6 +104,18 @@ async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     window.location.reload();
 }
+
+function toggleUserDropdown(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('user-dropdown');
+    if (menu) menu.classList.toggle('active');
+}
+
+// Close dropdown on click outside
+document.addEventListener('click', () => {
+    const menu = document.getElementById('user-dropdown');
+    if (menu) menu.classList.remove('active');
+});
 
 // --- Animations (GSAP) ---
 function initAnimations() {
@@ -108,21 +168,6 @@ function initAnimations() {
             ease: "power4.out"
         });
     }
-
-    // 3. Staggered Feature Cards - DISABLED (CSS handles hover effects now, and this was causing visibility issues)
-    /*
-    gsap.from('.feature-card', {
-        scrollTrigger: {
-            trigger: '.feature-grid',
-            start: "top 85%"
-        },
-        y: 50,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.2,
-        ease: "back.out(1.7)"
-    });
-    */
 
     // 4. Parallax Effect
     gsap.to('.parallax-bg', {
@@ -245,16 +290,8 @@ function selectSeats(scheduleId) {
 
 // --- Page: Seat Selection (Existing Logic Preserved) ---
 if (window.location.pathname === '/seats') {
-    // ... [Logic kept identical but simplified for brevity in this rewrite, assuming the HTML for seats.html wasn't changed much. 
-    // If seats.html structure depends on classes that were removed, it might break. 
-    // However, I kept generic classes in CSS. Let's assume standard behavior.]
-
-    // Use the existing logic just re-wrapped or rely on 'defer' loading. 
-    // I will paste the core logic back to ensure functionality.
     const scheduleId = getQueryParam('id');
-    const seatMap = document.getElementById('seat-map'); // Ensure seats.html has this
-    // ... (To save tokens, I'm assuming the user hasn't asked to redesign the seats page explicitly, but "copy website" implies mostly home. 
-    // I will provide the full logic to be safe.)
+    const seatMap = document.getElementById('seat-map');
 
     const summaryText = document.getElementById('summary-text');
     const bookBtn = document.getElementById('book-btn');

@@ -108,6 +108,13 @@ def init_db():
         except sqlite3.OperationalError:
             print("Migrating DB: Adding Passengers column...")
             db.execute("ALTER TABLE bookings ADD COLUMN passengers TEXT")
+
+        # Migration 4: Check if is_admin exists in users
+        try:
+            db.execute("SELECT is_admin FROM users LIMIT 1")
+        except sqlite3.OperationalError:
+            print("Migrating DB: Adding is_admin column...")
+            db.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0")
         
         db.commit()
 
@@ -120,8 +127,25 @@ def seed_data():
         cur = db.execute("SELECT count(*) FROM users")
         if cur.fetchone()[0] == 0:
             print("Seeding Users...")
-            db.execute("INSERT INTO users (email, name, phone) VALUES (?, ?, ?)", 
-                       ('demo@example.com', 'Demo User', '555-0123'))
+            db.execute("INSERT INTO users (email, name, phone, is_admin) VALUES (?, ?, ?, ?)", 
+                       ('demo@example.com', 'Demo User', '555-0123', 0))
+            # Seed Admin
+            db.execute("INSERT INTO users (email, name, phone, is_admin) VALUES (?, ?, ?, ?)", 
+                       ('arnabdas40922@gmail.com', 'Admin User', '999-9999', 1))
+        else:
+            # Seed Admin
+            # Check if admin email exists
+            cur = db.execute("SELECT id FROM users WHERE email = ?", ('arnabdas40922@gmail.com',))
+            row = cur.fetchone()
+            if row:
+                # Promote existing user
+                print("Promoting existing user to Admin...")
+                db.execute("UPDATE users SET is_admin = 1 WHERE id = ?", (row[0],))
+            else:
+                # Create new admin
+                print("Seeding Admin User...")
+                db.execute("INSERT INTO users (email, name, phone, is_admin) VALUES (?, ?, ?, ?)", 
+                           ('arnabdas40922@gmail.com', 'Admin User', '999-9999', 1))
         
         # 2. Seed Bus Data if empty OR if extending dates
         # Use a flag to track if we need to insert core data
@@ -227,6 +251,30 @@ def seed_data():
         
         db.commit()
 
+# --- Admin Decorator ---
+from functools import wraps
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            # If it's a page request, redirect to login
+            if request.accept_mimetypes.accept_html:
+                return render_template('login.html', error="Please login as admin")
+            return jsonify({"error": "Unauthorized"}), 401
+        
+        db = get_db()
+        cur = db.execute("SELECT is_admin FROM users WHERE id = ?", (session['user_id'],))
+        user = cur.fetchone()
+        
+        if not user or not user['is_admin']:
+            if request.accept_mimetypes.accept_html:
+                return render_template('index.html', error="Admin access required")
+            return jsonify({"error": "Forbidden: Admin Access Required"}), 403
+             
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- Routes ---
 
 @app.route('/')
@@ -252,6 +300,26 @@ def booking_details_page():
 @app.route('/ticket/<path:path>')
 def ticket_page(path):
     return render_template('ticket.html')
+
+@app.route('/my-bookings')
+def my_bookings_page():
+    return render_template('my_bookings.html')
+
+# --- Admin Routes ---
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    return render_template('admin/dashboard.html')
+
+@app.route('/admin/bookings')
+@admin_required
+def admin_bookings_page():
+    return render_template('admin/bookings.html')
+
+@app.route('/admin/routes')
+@admin_required
+def admin_routes_page():
+    return render_template('admin/routes.html')
 
 # --- Auth APIs ---
 from flask import session
@@ -514,11 +582,18 @@ def logout():
 @app.route('/api/me')
 def get_current_user():
     if 'user_id' in session:
+        # Fetch is_admin
+        db = get_db()
+        cur = db.execute("SELECT is_admin FROM users WHERE id = ?", (session['user_id'],))
+        user = cur.fetchone()
+        is_admin = bool(user['is_admin']) if user else False
+
         return jsonify({
             "authenticated": True, 
             "id": session['user_id'],
             "name": session['user_name'],
-            "email": session['user_email']
+            "email": session['user_email'],
+            "is_admin": is_admin
         })
     return jsonify({"authenticated": False})
 
@@ -571,7 +646,8 @@ def api_seats(schedule_id):
     # Mock seat availability
     # In a real app, query 'bookings' to find taken seats for this schedule
     db = get_db()
-    cur = db.execute("SELECT seats FROM bookings WHERE schedule_id = ?", (schedule_id,))
+    # Exclude cancelled bookings so seats become free again
+    cur = db.execute("SELECT seats FROM bookings WHERE schedule_id = ? AND status != 'CANCELLED'", (schedule_id,))
     data = cur.fetchall()
     
     booked_seats = []
@@ -695,6 +771,207 @@ def api_ticket(id):
             data['passengers'] = json.loads(data['passengers'])
         return jsonify(data)
     return jsonify({"error": "Ticket not found"}), 404
+    
+@app.route('/api/my-bookings')
+def api_my_bookings():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    query = '''
+        SELECT bk.id, bk.created_at, bk.total_amount, bk.status,
+               r.from_city, r.to_city, s.travel_date, s.departure_time,
+               bo.name as operator
+        FROM bookings bk
+        JOIN schedules s ON bk.schedule_id = s.id
+        JOIN routes r ON s.route_id = r.id
+        JOIN buses b ON s.bus_id = b.id
+        JOIN bus_operators bo ON b.operator_id = bo.id
+        WHERE bk.user_id = ?
+        ORDER BY bk.created_at DESC
+    '''
+    db = get_db()
+    cur = db.execute(query, (session['user_id'],))
+    
+    bookings = []
+    now = datetime.now()
+    
+    for row in cur.fetchall():
+        b = dict(row)
+        # Calculate can_cancel
+        try:
+            # Parse travel date time
+            travel_dt_str = f"{b['travel_date']} {b['departure_time']}"
+            travel_dt = datetime.strptime(travel_dt_str, "%Y-%m-%d %H:%M")
+            
+            # Allow cancellation if travel is in future AND status is not already cancelled
+            if travel_dt > now and b['status'] != 'CANCELLED':
+                b['can_cancel'] = True
+            else:
+                b['can_cancel'] = False
+        except Exception as e:
+            print(f"Date parse error: {e}")
+            b['can_cancel'] = False
+            
+        bookings.append(b)
+        
+    return jsonify(bookings)
+
+@app.route('/api/cancel-booking', methods=['POST'])
+def api_cancel_booking():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    data = request.json
+    booking_id = data.get('bookingId')
+    
+    if not booking_id:
+        return jsonify({"error": "Missing booking ID"}), 400
+        
+    db = get_db()
+    
+    # Check booking ownership and time
+    query = '''
+        SELECT bk.id, bk.status, s.travel_date, s.departure_time
+        FROM bookings bk
+        JOIN schedules s ON bk.schedule_id = s.id
+        WHERE bk.id = ? AND bk.user_id = ?
+    '''
+    cur = db.execute(query, (booking_id, session['user_id']))
+    row = cur.fetchone()
+    
+    if not row:
+        return jsonify({"error": "Booking not found or access denied"}), 404
+        
+    if row['status'] == 'CANCELLED':
+        return jsonify({"error": "Booking is already cancelled"}), 400
+        
+    # Check time
+    try:
+        travel_dt_str = f"{row['travel_date']} {row['departure_time']}"
+        travel_dt = datetime.strptime(travel_dt_str, "%Y-%m-%d %H:%M")
+        if datetime.now() >= travel_dt:
+             return jsonify({"error": "Cannot cancel past or ongoing trips"}), 400
+    except ValueError:
+        return jsonify({"error": "Invalid date format in record"}), 500
+
+    # Proceed to cancel
+    db.execute("UPDATE bookings SET status = 'CANCELLED' WHERE id = ?", (booking_id,))
+    db.commit()
+    
+    # Send Email Notification
+    try:
+        user_email = session.get('user_email')
+        if user_email:
+            subject = f"Booking Cancelled - PNR: AB-{booking_id}"
+            body = f"Your ticket with PNR AB-{booking_id} has been cancelled. The money will be transferred to your account within 2 working days."
+            send_email(user_email, subject, body)
+    except Exception as e:
+        print(f"Failed to send cancellation email: {e}")
+    
+    return jsonify({"success": True, "message": "Booking cancelled successfully"})
+
+# --- Admin APIs ---
+
+@app.route('/api/admin/stats')
+@admin_required
+def admin_stats():
+    db = get_db()
+    # Total Bookings
+    cur = db.execute("SELECT count(*) FROM bookings")
+    total_bookings = cur.fetchone()[0]
+    
+    # Total Revenue (Approx)
+    cur = db.execute("SELECT sum(total_amount) FROM bookings")
+    total_revenue = cur.fetchone()[0] or 0
+    
+    # Active Routes
+    cur = db.execute("SELECT count(*) FROM routes")
+    total_routes = cur.fetchone()[0]
+    
+    return jsonify({
+        "bookings": total_bookings,
+        "revenue": total_revenue,
+        "routes": total_routes
+    })
+
+@app.route('/api/admin/bookings')
+@admin_required
+def admin_get_bookings():
+    db = get_db()
+    # Get recent bookings
+    query = '''
+        SELECT bk.id, bk.created_at, u.name as user_name, r.from_city, r.to_city, 
+               s.travel_date, bk.total_amount, bk.status
+        FROM bookings bk
+        JOIN users u ON bk.user_id = u.id
+        JOIN schedules s ON bk.schedule_id = s.id
+        JOIN routes r ON s.route_id = r.id
+        ORDER BY bk.created_at DESC LIMIT 50
+    '''
+    cur = db.execute(query)
+    bookings = [dict(row) for row in cur.fetchall()]
+    return jsonify(bookings)
+
+@app.route('/api/admin/routes', methods=['GET', 'POST'])
+@admin_required
+def admin_manage_routes():
+    db = get_db()
+    if request.method == 'POST':
+        data = request.json
+        from_city = data.get('from_city')
+        to_city = data.get('to_city')
+        duration = data.get('duration')
+        
+        if not all([from_city, to_city, duration]):
+             return jsonify({"error": "Missing fields"}), 400
+             
+        db.execute("INSERT INTO routes (from_city, to_city, duration) VALUES (?, ?, ?)", 
+                   (from_city, to_city, duration))
+        db.commit()
+        return jsonify({"message": "Route added successfully"})
+    else:
+        # GET all routes
+        cur = db.execute("SELECT * FROM routes ORDER BY from_city")
+        routes = [dict(row) for row in cur.fetchall()]
+        return jsonify(routes)
+
+@app.route('/api/admin/buses')
+@admin_required
+def admin_get_buses():
+    db = get_db()
+    cur = db.execute("SELECT b.id, b.bus_number, b.bus_type, bo.name as operator FROM buses b JOIN bus_operators bo ON b.operator_id = bo.id")
+    buses = [dict(row) for row in cur.fetchall()]
+    return jsonify(buses)
+
+@app.route('/api/admin/schedules', methods=['POST'])
+@admin_required
+def admin_add_schedule():
+    data = request.json
+    bus_id = data.get('bus_id')
+    route_id = data.get('route_id')
+    dep_time = data.get('departure_time') # HH:MM
+    travel_date = data.get('travel_date') # YYYY-MM-DD
+    price = data.get('price')
+    
+    if not all([bus_id, route_id, dep_time, travel_date, price]):
+        return jsonify({"error": "Missing fields"}), 400
+        
+    # Calculate arrival (simple logic for now)
+    # Parse dep time
+    try:
+        dh, dm = map(int, dep_time.split(':'))
+        ah = (dh + 5) % 24 # rough estimation
+        arr_time = f"{ah:02}:{dm:02}"
+    except:
+         return jsonify({"error": "Invalid time format"}), 400
+
+    db = get_db()
+    db.execute('''
+        INSERT INTO schedules (bus_id, route_id, departure_time, arrival_time, travel_date, price)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (bus_id, route_id, dep_time, arr_time, travel_date, price))
+    db.commit()
+    return jsonify({"message": "Schedule added"})
 
 if __name__ == '__main__':
     init_db() # Ensure tables/columns exist

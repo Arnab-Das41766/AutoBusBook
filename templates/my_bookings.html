@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - AutoBusBook</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .page-container {
+            padding: 8rem 2rem 4rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            min-height: 80vh;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 1rem;
+        }
+
+        .booking-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .booking-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+        }
+
+        .booking-info h3 {
+            color: white;
+            margin-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .booking-meta {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .booking-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .booking-price {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-align: right;
+        }
+
+        .view-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: 0.3s;
+            display: inline-block;
+        }
+
+        .view-btn:hover {
+            background: var(--accent-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="glass-prism-nav">
+            <a href="/" class="logo">AutoBusBook</a>
+            <div class="nav-center-text">My Trips</div>
+            <nav class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="page-container">
+        <div class="page-header">
+            <h2>Your Journey History</h2>
+        </div>
+
+        <div id="bookings-list">
+            <div class="loader" style="text-align:center; color:white;">Loading bookings...</div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('bookings-list');
+            try {
+                const res = await fetch('/api/my-bookings');
+                if (res.status === 401) {
+                    window.location.href = '/login?redirect=/my-bookings';
+                    return;
+                }
+
+                const bookings = await res.json();
+
+                if (bookings.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No bookings found</h3>
+                            <p>You haven't booked any trips yet.</p>
+                            <a href="/" class="cta-button" style="margin-top:1rem; display:inline-block;">Book Now</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = bookings.map(b => `
+                    <div class="booking-card" id="booking-${b.id}">
+                        <div class="booking-info">
+                            <h3>${b.from_city} → ${b.to_city}</h3>
+                            <div class="booking-meta">
+                                <span>📅 ${b.travel_date}</span>
+                                <span>⏰ ${b.departure_time}</span>
+                                <span>🚌 ${b.operator}</span>
+                                <span style="color: ${b.status === 'CANCELLED' ? '#ef4444' : '#4ade80'}; font-weight:bold; border:1px solid currentColor; padding:2px 8px; border-radius:4px; font-size:0.8rem;">
+                                    ${b.status}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="booking-action" style="text-align:right;">
+                            <div class="booking-price">₹${b.total_amount}</div>
+                            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                                <a href="/ticket/${b.id}" class="view-btn">View Ticket</a>
+                                ${b.can_cancel ? `<button onclick="cancelBooking(${b.id})" class="view-btn" style="background:rgba(239, 68, 68, 0.2); color:#ef4444; border:1px solid #ef4444;">Cancel</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = '<div style="color:red; text-align:center;">Failed to load bookings.</div>';
+            }
+        });
+
+        async function cancelBooking(id) {
+            if (!confirm("Are you sure you want to cancel this booking? This action cannot be undone.")) return;
+
+            try {
+                const res = await fetch('/api/cancel-booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookingId: id })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("Booking cancelled successfully.");
+                    window.location.reload();
+                } else {
+                    alert(data.error || "Failed to cancel booking");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Network error occurred");
+            }
+        }
+    </script>
+</body>
+
+</html>
