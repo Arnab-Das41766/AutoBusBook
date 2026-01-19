@@ -68,7 +68,7 @@ python refresh_data.py
 
 ### 4. Admin Access
 The default admin user is seeded automatically:
-- **Email**: `arnabdas40922@gmail.com`
+- **Email**: `testuser@gmail.com`
 - **Login**: Use the OTP login flow. The system recognizes the admin email and grants access to the `/admin` panel.
 
 ### 5. Run Application
