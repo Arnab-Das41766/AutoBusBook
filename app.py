@@ -465,9 +465,19 @@ def send_email(to_email, subject, body, attachment=None):
         else:
             # Real SMTP
             context = ssl.create_default_context()
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.ehlo()
-                server.starttls(context=context)
+            if smtp_port == 465:
+                # Use SSL for port 465
+                with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context) as server:
+                    server.login(sender_email, sender_password)
+                    server.send_message(msg)
+            else:
+                # Use STARTTLS for port 587
+                with smtplib.SMTP(smtp_server, smtp_port) as server:
+                    server.ehlo()
+                    server.starttls(context=context)
+                    server.ehlo()
+                    server.login(sender_email, sender_password)
+                    server.send_message(msg)
                 server.ehlo()
                 server.login(sender_email, sender_password)
                 server.send_message(msg)
